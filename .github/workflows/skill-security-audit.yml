@@ -49,20 +49,21 @@ jobs:
             exit 0
           fi
 
-          # Extract unique skill root directories (top-level dirs containing SKILL.md)
+          # Extract unique skill directories (prefer most-specific path with SKILL.md)
           SKILLS=()
           SEEN=()
           while IFS= read -r file; do
-            # Get the top-level directory
+            # Get the two-segment and one-segment directory paths
             dir=$(echo "$file" | cut -d'/' -f1-2)
             # Skip non-skill paths
             case "$dir" in
               .github/*|.claude/*|.codex/*|.gemini/*|docs/*|scripts/*|commands/*|standards/*|eval-workspace/*) continue ;;
             esac
-            # Check if this directory has a SKILL.md (is a skill)
             skill_root=$(echo "$file" | cut -d'/' -f1)
-            # Walk up to find the skill root that contains SKILL.md
-            for candidate in "$skill_root" "$dir"; do
+            # Check specific path first, then fall back to top-level
+            # This prevents collection-level SKILL.md (e.g. engineering/SKILL.md)
+            # from causing a recursive scan of all subdirectory skills
+            for candidate in "$dir" "$skill_root"; do
               if [ -f "$candidate/SKILL.md" ] && [[ ! " ${SEEN[*]} " =~ " $candidate " ]]; then
                 SKILLS+=("$candidate")
                 SEEN+=("$candidate")
